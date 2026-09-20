@@ -15,8 +15,9 @@ Erstellt dienstags ein Wirtschafts-Briefing aus aktuellen RSS-Nachrichten und Ma
 Voraussetzungen sind Python 3.11, ein Anthropic API-Key und für den E-Mail-Versand ein Gmail-App-Passwort.
 
 ```bash
-git clone git@github.com:Benchmark-Bene/test.git
-cd test
+git clone git@github.com:Bene77-w/wirtschafts-briefing.git
+cd wirtschafts-briefing
+
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
