@@ -1,62 +1,69 @@
 # Wirtschafts-Briefing
 
-Erstellt dienstags ein Wirtschafts-Briefing aus aktuellen RSS-Nachrichten und Marktdaten. Claude filtert und fasst die Meldungen zusammen; das Ergebnis wird als PDF gespeichert und optional als HTML-E-Mail versendet.
+Wirtschafts-Briefing generates a German-language economic briefing on Tuesdays. It combines news summaries from RSS feeds with a market snapshot and can save a PDF, send an HTML email, or do both.
 
-## Funktionen
+## Features
 
-- Nachrichten aus sechs Kategorien: Allgemein, Finanzen, Krypto, Forex, Tech und Rohstoffe
-- Marktdaten für Indizes, Kryptowährungen, Rohstoffe und EUR/USD
-- Auswahl und Zusammenfassung der wichtigsten Meldungen mit Claude
-- PDF-Erstellung und E-Mail-Versand über Gmail SMTP
-- Automatischer Start über GitHub Actions
+- Collects recent RSS items across general economics, finance, crypto, forex, technology, and commodities. It removes duplicate titles within each category.
+- Uses Claude to select up to three stories per category and summarize their main points and possible implications.
+- Uses yfinance to report the latest available closing prices and percentage changes from the previous close for configured indices, cryptocurrencies, commodities, and currency pairs.
+- Writes a timestamped PDF and sends an HTML briefing via SMTP. Each output can be enabled independently.
 
-## Einrichtung
+## Requirements
 
-Voraussetzungen sind Python 3.11, ein Anthropic API-Key und für den E-Mail-Versand ein Gmail-App-Passwort.
+- Python 3.11, the version used by GitHub Actions
+- Internet access to the RSS feeds, Anthropic API, and Yahoo Finance
+- An Anthropic API key and, for email delivery with the default Gmail SMTP settings, a Gmail app password
+
+## Setup
 
 ```bash
 git clone git@github.com:Bene77-w/wirtschafts-briefing.git
 cd wirtschafts-briefing
-
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python3.11 -m venv venv
+source venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-Lege im Projektverzeichnis eine nicht versionierte `.env` an:
+## Configuration
 
-```env
-ANTHROPIC_API_KEY=dein_api_key
-EMAIL_PASSWORD=dein_gmail_app_passwort
-```
+Set these environment variables in your shell or in a local `.env` file in the repository root.
 
-Passe anschließend in `config.yaml` mindestens Absender und Empfänger an. Dort lassen sich außerdem RSS-Feeds, Marktsymbole, Nachrichtenanzahl, Zeitfilter und Ausgabeoptionen konfigurieren.
+| Variable | Purpose |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Required for Claude ranking and summarization. |
+| `EMAIL_PASSWORD` | SMTP password for the configured sender. Required when email delivery is enabled. |
 
-## Ausführen
+Edit [config.yaml](config.yaml) before running. Both outputs are enabled in the supplied configuration. For email delivery, set `email.sender` and `email.recipient` and adjust the SMTP host and port as needed. For PDF-only runs, set `output.send_email` to `false`.
+
+Use `rss_feeds`, `news_hours_filter`, and `news_count.raw` to change the feed URLs, article age window, and candidate limit per category. The supplied settings use a 24-hour window and up to six candidates per category. Use `market_symbols` to change the yfinance tickers and `output.generate_pdf` and `output.pdf_path` to control PDF generation and its destination.
+
+## Usage
+
+From the repository root, run:
 
 ```bash
 python main.py
 ```
 
-Das Programm beendet sich ohne Verarbeitung, wenn es nicht an einem Dienstag gestartet wird. PDF-Erstellung und E-Mail-Versand werden in `config.yaml` über `output.generate_pdf` und `output.send_email` gesteuert.
+The script uses the machine's local date and exits without generating a briefing on days other than Tuesday. With PDF generation enabled, the default output is `briefings/wirtschafts-briefing_YYYY-MM-DD_HH-MM.pdf`.
 
-## GitHub Actions
+### GitHub Actions
 
-Der vorhandene Workflow `.github/workflows/daily-briefing.yml` startet täglich um 18:00 UTC; `main.py` erstellt das Briefing jedoch nur dienstags. Hinterlege unter **Settings → Secrets and variables → Actions** diese Repository-Secrets:
+The [workflow](.github/workflows/daily-briefing.yml) is scheduled daily at 18:00 UTC. You can also start it manually under **Actions → Daily Economic Briefing → Run workflow**. Both triggers follow the script's Tuesday check.
 
-- `ANTHROPIC_API_KEY`
-- `EMAIL_PASSWORD`
+Set `ANTHROPIC_API_KEY` and, if email is enabled, `EMAIL_PASSWORD` as repository Actions secrets. Set the sender and recipient in `config.yaml`. The workflow's `GMAIL_SENDER` secret only replaces the literal placeholder `deine.email@gmail.com` when that placeholder is used as the sender.
 
-Der Workflow kann unter **Actions → Daily Economic Briefing → Run workflow** auch manuell gestartet werden. Wegen der Dienstagsprüfung erzeugt ein manueller Lauf an anderen Wochentagen kein Briefing.
+## Project structure
 
-## Wichtige Dateien
+| Path | Purpose |
+| --- | --- |
+| `main.py` | Entry point and Tuesday check |
+| `config.yaml` | Feed, market, email, and output settings |
+| `modules/` | RSS and market data retrieval, Claude processing, and PDF and email output |
+| `templates/email_template.html` | HTML email layout |
+| `.github/workflows/daily-briefing.yml` | Scheduled and manual runs |
 
-| Datei | Zweck |
-|---|---|
-| `config.yaml` | E-Mail-, Feed-, Markt- und Ausgabe-Einstellungen |
-| `main.py` | Ablauf und Dienstagsprüfung |
-| `modules/` | Abruf, Filterung, Zusammenfassung und Ausgabe |
-| `templates/email_template.html` | Layout der HTML-E-Mail |
-| `.github/workflows/daily-briefing.yml` | Automatischer Workflow |
+## License
 
-Bei Fehlern zuerst die Konsolenausgabe beziehungsweise das GitHub-Actions-Log prüfen. Das Programm muss aus dem Repository-Hauptverzeichnis gestartet werden.
+[MIT License](LICENSE).
